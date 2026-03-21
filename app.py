@@ -18,21 +18,20 @@ try:
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
     tf.config.run_functions_eagerly(False)
-except Exception:
+except:
     pass
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TFLITE_MODEL_PATH = os.path.join(BASE_DIR, "models", "nids_dcnn_model.tflite")
-H5_MODEL_PATH = os.path.join(BASE_DIR, "models", "nids_dcnn_model.h5")
-SCALER_PATH = os.path.join(BASE_DIR, "models", "cicids_scaler.pkl")
+TFLITE_MODEL_PATH = "models/nids_dcnn_model.tflite"
+H5_MODEL_PATH = "models/nids_dcnn_model.h5"
+SCALER_PATH = "models/cicids_scaler.pkl"
 LABEL_MAP = {0: "BENIGN", 1: "ATTACK"}
 
-MAX_ROWS_PER_REQUEST = 10000
-PREDICT_BATCH_SIZE = 64
-MAX_DOWNLOAD_ROWS = 500
-MAX_DISPLAY_ROWS = 30
+MAX_ROWS_PER_REQUEST = 10000   # Hard limit for low-memory tiers
+PREDICT_BATCH_SIZE = 64        # Smaller batches = less peak memory
+MAX_DOWNLOAD_ROWS = 500        # Cap CSV response size
+MAX_DISPLAY_ROWS = 30          # Rows to show in results table
 
-app = FastAPI(title="Net Ninja - NIDS Backend")
+app = FastAPI(title="Sentinel AI - NIDS Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,7 +46,6 @@ scaler = None
 load_error = None
 use_tflite = False
 
-
 def load_assets():
     global model, tflite_interpreter, scaler, load_error, use_tflite
     try:
@@ -60,25 +58,21 @@ def load_assets():
             tflite_interpreter = tf.lite.Interpreter(model_path=TFLITE_MODEL_PATH)
             tflite_interpreter.allocate_tensors()
             use_tflite = True
-            print("✓ TFLite model and scaler loaded successfully")
+            print("TFLite model and scaler loaded successfully (low-memory mode)")
         elif os.path.exists(H5_MODEL_PATH):
             from tensorflow.keras.models import load_model as keras_load
             model = keras_load(H5_MODEL_PATH)
             use_tflite = False
-            print("✓ Keras H5 model and scaler loaded successfully")
+            print("Keras H5 model and scaler loaded successfully")
         else:
-            raise FileNotFoundError(
-                f"No model found at {TFLITE_MODEL_PATH} or {H5_MODEL_PATH}"
-            )
+            raise FileNotFoundError(f"No model found at {TFLITE_MODEL_PATH} or {H5_MODEL_PATH}")
 
         load_error = None
     except Exception as exc:
         load_error = str(exc)
-        print(f"✗ Failed to load ML assets: {load_error}")
-
+        print(f"Failed to load ML assets: {load_error}")
 
 load_assets()
-
 
 def preprocess_inference(df: pd.DataFrame) -> pd.DataFrame:
     to_drop = ["Flow ID", "Source IP", "Destination IP", "Timestamp"]
@@ -87,7 +81,6 @@ def preprocess_inference(df: pd.DataFrame) -> pd.DataFrame:
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
     df.fillna(0, inplace=True)
     return df
-
 
 def compute_risk(attack_pct: float):
     if attack_pct > 75:
@@ -101,28 +94,28 @@ def compute_risk(attack_pct: float):
     else:
         return "MINIMAL", "Network appears secure with minimal threats."
 
-
 @app.head("/")
 async def head_root():
     return HTMLResponse(content="")
 
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_upload_page():
-    html_path = os.path.join(BASE_DIR, "frontend", "upload.html")
-    if not os.path.exists(html_path):
-        raise HTTPException(status_code=404, detail="Upload page not found.")
-    with open(html_path, "r", encoding="utf-8") as f:
+async def serve_frontend():
+    html_path = os.path.join(os.path.dirname(__file__), "code.html")
+    with open(html_path, "r") as f:
         return HTMLResponse(content=f.read())
 
 
-@app.get("/results", response_class=HTMLResponse)
-async def serve_results_page():
-    html_path = os.path.join(BASE_DIR, "frontend", "results.html")
-    if not os.path.exists(html_path):
-        raise HTTPException(status_code=404, detail="Results page not found.")
-    with open(html_path, "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
+@app.get("/sample-dataset")
+async def download_sample():
+    csv_path = os.path.join(os.path.dirname(__file__), "test.csv")
+    if not os.path.exists(csv_path):
+        raise HTTPException(status_code=404, detail="Sample dataset not found.")
+    return FileResponse(
+        csv_path,
+        media_type="text/csv",
+        filename="sample_network_data.csv",
+    )
 
 
 @app.get("/health")
@@ -138,35 +131,6 @@ async def health():
         "model_type": "tflite" if use_tflite else "keras",
         "max_rows": MAX_ROWS_PER_REQUEST,
     }
-
-
-@app.get("/sample-dataset")
-async def download_sample():
-    csv_path = os.path.join(BASE_DIR, "test.csv")
-    if os.path.exists(csv_path):
-        return FileResponse(
-            csv_path,
-            media_type="text/csv",
-            filename="sample_network_data.csv",
-        )
-    if scaler is None:
-        raise HTTPException(status_code=503, detail="Scaler not loaded, cannot generate sample.")
-    feature_names = list(scaler.feature_names_in_)
-    n_samples = 20
-    rng = np.random.RandomState(42)
-    data = rng.randn(n_samples, len(feature_names)) * 0.5
-    sample_df = pd.DataFrame(data, columns=feature_names)
-    sample_df.insert(0, "Source IP", [f"192.168.1.{rng.randint(1, 255)}" for _ in range(n_samples)])
-    sample_df.insert(1, "Destination IP", [f"10.0.0.{rng.randint(1, 255)}" for _ in range(n_samples)])
-    sample_df.insert(2, "Timestamp", pd.date_range("2024-01-15 10:00:00", periods=n_samples, freq="s").astype(str).tolist())
-    buf = io.StringIO()
-    sample_df.to_csv(buf, index=False)
-    buf.seek(0)
-    return HTMLResponse(
-        content=buf.getvalue(),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=sample_network_data.csv"},
-    )
 
 
 @app.post("/predict")
@@ -188,10 +152,8 @@ async def predict(file: UploadFile = File(...)):
             raise ValueError(
                 f"Too many rows ({total_rows}). Max allowed is {MAX_ROWS_PER_REQUEST} rows."
             )
-
         original_df = df.copy()
         processed = preprocess_inference(df)
-
         expected_features = scaler.feature_names_in_
         if len(processed.columns) != len(expected_features):
             raise ValueError(
@@ -202,7 +164,6 @@ async def predict(file: UploadFile = File(...)):
         if missing:
             raise ValueError(f"Missing columns: {', '.join(list(missing)[:10])}")
         processed = processed[expected_features]
-
         predicted_chunks = []
         confidence_chunks = []
 
@@ -211,26 +172,18 @@ async def predict(file: UploadFile = File(...)):
             output_details = tflite_interpreter.get_output_details()
 
             for i in range(0, total_rows, PREDICT_BATCH_SIZE):
-                batch_df = processed.iloc[i : i + PREDICT_BATCH_SIZE]
+                batch_df = processed.iloc[i:i + PREDICT_BATCH_SIZE]
                 scaled_batch = scaler.transform(batch_df).astype(np.float32)
-                x_batch = scaled_batch.reshape(
-                    scaled_batch.shape[0], scaled_batch.shape[1], 1
-                )
+                x_batch = scaled_batch.reshape(scaled_batch.shape[0], scaled_batch.shape[1], 1)
 
                 batch_preds = []
                 for row_idx in range(x_batch.shape[0]):
-                    single_input = x_batch[row_idx : row_idx + 1]
-                    tflite_interpreter.resize_tensor_input(
-                        input_details[0]["index"], single_input.shape
-                    )
+                    single_input = x_batch[row_idx:row_idx+1]
+                    tflite_interpreter.resize_tensor_input(input_details[0]['index'], single_input.shape)
                     tflite_interpreter.allocate_tensors()
-                    tflite_interpreter.set_tensor(
-                        input_details[0]["index"], single_input
-                    )
+                    tflite_interpreter.set_tensor(input_details[0]['index'], single_input)
                     tflite_interpreter.invoke()
-                    output = tflite_interpreter.get_tensor(
-                        output_details[0]["index"]
-                    )
+                    output = tflite_interpreter.get_tensor(output_details[0]['index'])
                     batch_preds.append(output[0])
 
                 batch_preds = np.array(batch_preds)
@@ -238,11 +191,9 @@ async def predict(file: UploadFile = File(...)):
                 confidence_chunks.append(np.max(batch_preds, axis=1))
         else:
             for i in range(0, total_rows, PREDICT_BATCH_SIZE):
-                batch_df = processed.iloc[i : i + PREDICT_BATCH_SIZE]
+                batch_df = processed.iloc[i:i + PREDICT_BATCH_SIZE]
                 scaled_batch = scaler.transform(batch_df).astype(np.float32)
-                x_batch = scaled_batch.reshape(
-                    scaled_batch.shape[0], scaled_batch.shape[1], 1
-                )
+                x_batch = scaled_batch.reshape(scaled_batch.shape[0], scaled_batch.shape[1], 1)
                 batch_preds = model.predict(x_batch, verbose=0)
                 predicted_chunks.append(np.argmax(batch_preds, axis=1))
                 confidence_chunks.append(np.max(batch_preds, axis=1))
@@ -261,9 +212,9 @@ async def predict(file: UploadFile = File(...)):
 
         conf_histogram = {
             "90-100%": int(((confidence_scores >= 0.9) & (confidence_scores <= 1.0)).sum()),
-            "80-90%":  int(((confidence_scores >= 0.8) & (confidence_scores <  0.9)).sum()),
-            "70-80%":  int(((confidence_scores >= 0.7) & (confidence_scores <  0.8)).sum()),
-            "60-70%":  int(((confidence_scores >= 0.6) & (confidence_scores <  0.7)).sum()),
+            "80-90%":  int(((confidence_scores >= 0.8) & (confidence_scores < 0.9)).sum()),
+            "70-80%":  int(((confidence_scores >= 0.7) & (confidence_scores < 0.8)).sum()),
+            "60-70%":  int(((confidence_scores >= 0.6) & (confidence_scores < 0.7)).sum()),
             "<60%":    int((confidence_scores < 0.6).sum()),
         }
 
@@ -298,12 +249,8 @@ async def predict(file: UploadFile = File(...)):
         download_data = {}
         for col in display_columns:
             download_data[col] = download_slice[col].tolist()
-        download_data["Prediction"] = [
-            LABEL_MAP[int(c)] for c in predicted_classes[:download_limit]
-        ]
-        download_data["Confidence"] = [
-            round(float(s), 4) for s in confidence_scores[:download_limit]
-        ]
+        download_data["Prediction"] = [LABEL_MAP[int(c)] for c in predicted_classes[:download_limit]]
+        download_data["Confidence"] = [round(float(s), 4) for s in confidence_scores[:download_limit]]
         download_df = pd.DataFrame(download_data)
 
         return {
@@ -331,6 +278,4 @@ async def predict(file: UploadFile = File(...)):
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8008"))
-    reload = os.getenv("UVICORN_RELOAD", "false").lower() == "true"
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=reload)
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

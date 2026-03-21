@@ -1,64 +1,62 @@
-# Python bytecode / caches
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
-
-# Environment/config secrets
-.env
-.env.*
-!.env.example
-
-# Tooling caches
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.hypothesis/
-.tox/
-.nox/
-.cache/
-
-# Coverage / test artifacts
-.coverage
-.coverage.*
-coverage.xml
-htmlcov/
-
-# Build artifacts
+*.so
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
 *.egg-info/
+.installed.cfg
 *.egg
 
-# Jupyter
-.ipynb_checkpoints/
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
 
-# Editors / IDEs
+# IDE and editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Project data artifacts (keep directory structure, ignore contents)
-data/raw/*
-!data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
+# Jupyter
+.ipynb_checkpoints/
 
-# Model artifacts (too large for git — download separately)
-# Place these in models/ locally; see README for instructions
+# Project data (large files)
+data/raw/
+data/processed/
+*.pcap
+*.parquet
 
-!models/.gitkeep
+# Test files
+test.csv
 
-# Other common ML artifacts
-checkpoints/
-artifacts/
-outputs/
+# Logs
+*.log
 logs/
+
+# Temporary
+*.tmp
+*.temp
+
+# Legacy/Archive
+remains/
