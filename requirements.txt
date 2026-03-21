@@ -1,0 +1,22 @@
+# Net Ninja - NIDS Requirements
+# Generated from pyproject.toml
+# Install with: pip install -r requirements.txt
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+python-multipart>=0.0.6
+
+# Data & ML
+numpy>=1.24.0
+pandas>=1.5.0
+scikit-learn>=1.2.0
+joblib>=1.3.0
+imbalanced-learn>=0.10.0
+
+# Deep Learning (TensorFlow)
+# Note: Use tensorflow-cpu if you don't have a CUDA GPU
+tensorflow>=2.13.0
+
+# Jupyter (optional, for the preprocessing notebook only)
+ipykernel>=6.0.0

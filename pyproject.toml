@@ -1,7 +1,7 @@
 [project]
-name = "hack4impacttrack2-ai-ke-agents"
-version = "0.1.0"
-description = "Add your description here"
+name = "net-ninja"
+version = "1.0.0"
+description = "Network Intrusion Detection System powered by a DCNN trained on CICIDS-2017"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

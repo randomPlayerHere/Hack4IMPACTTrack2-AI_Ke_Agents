@@ -35,7 +35,7 @@ MAX_DOWNLOAD_ROWS = 500
 MAX_DISPLAY_ROWS = 30
 
 # ── FastAPI App ────────────────────────────────────────────────────────────
-app = FastAPI(title="Sentinel AI - NIDS Backend")
+app = FastAPI(title="Net Ninja - NIDS Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -116,7 +116,7 @@ async def head_root():
 @app.get("/", response_class=HTMLResponse)
 async def serve_upload_page():
     """Serve the upload/ingestion page."""
-    html_path = os.path.join(BASE_DIR, "stitch", "upload_csv_sentinel_ai", "code.html")
+    html_path = os.path.join(BASE_DIR, "frontend", "upload.html")
     if not os.path.exists(html_path):
         raise HTTPException(status_code=404, detail="Upload page not found.")
     with open(html_path, "r", encoding="utf-8") as f:
@@ -126,9 +126,7 @@ async def serve_upload_page():
 @app.get("/results", response_class=HTMLResponse)
 async def serve_results_page():
     """Serve the results dashboard page."""
-    html_path = os.path.join(
-        BASE_DIR, "stitch", "results_dashboard_sentinel_ai", "code.html"
-    )
+    html_path = os.path.join(BASE_DIR, "frontend", "results.html")
     if not os.path.exists(html_path):
         raise HTTPException(status_code=404, detail="Results page not found.")
     with open(html_path, "r", encoding="utf-8") as f:
@@ -357,4 +355,4 @@ async def predict(file: UploadFile = File(...)):
 
 # ── Entry Point ────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8008, reload=True)
