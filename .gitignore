@@ -62,6 +62,5 @@ logs/
 *.pth
 *.ckpt
 *.h5
-*.pkl
 *.joblib
 *.onnx
