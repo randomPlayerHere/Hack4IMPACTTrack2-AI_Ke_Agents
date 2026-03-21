@@ -1,4 +1,4 @@
-# 🥷 Net Ninja — AI-Powered Network Intrusion Detection
+# Net Ninja — AI-Powered Network Intrusion Detection
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=flat-square&logo=fastapi&logoColor=white)
@@ -12,7 +12,7 @@ It was built using the [CICIDS-2017](https://www.unb.ca/cic/datasets/ids-2017.ht
 
 ---
 
-## ✨ Features
+##  Features
 
 - **Upload & Analyze** — Drop a CSV of network flows and get results in seconds
 - **DCNN Model** — A 1D convolutional neural network with batch normalization and dropout, quantized to TFLite for fast inference
@@ -24,7 +24,7 @@ It was built using the [CICIDS-2017](https://www.unb.ca/cic/datasets/ids-2017.ht
 
 ---
 
-## 🗂️ Project Structure
+##  Project Structure
 
 ```
 net-ninja/
@@ -49,7 +49,7 @@ net-ninja/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -118,7 +118,7 @@ The app will be available at **[http://localhost:8008](http://localhost:8008)**.
 
 ---
 
-## 🖥️ Using the App
+##  Using the App
 
 1. Open your browser and go to `http://localhost:8008`
 2. **Upload a CSV** of network traffic logs, or click **"Try Sample Dataset"** to use the included demo file
@@ -132,7 +132,7 @@ The app will be available at **[http://localhost:8008](http://localhost:8008)**.
 
 ---
 
-## 🔌 API Reference
+##  API Reference
 
 All endpoints are served by the FastAPI backend. You can access the auto-generated docs at `http://localhost:8008/docs`.
 
@@ -170,7 +170,7 @@ curl -X POST http://localhost:8008/predict \
 
 ---
 
-## 🧠 Model Details
+##  Model Details
 
 | Property | Value |
 |----------|-------|
@@ -185,7 +185,7 @@ The model treats each network flow as a 1D "signal" and learns spatial patterns 
 
 ---
 
-## 📦 Tech Stack
+##  Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -197,7 +197,7 @@ The model treats each network flow as a 1D "signal" and learns spatial patterns 
 
 ---
 
-## ⚠️ Known Limitations
+##  Known Limitations
 
 - **Max 10,000 rows per request** — larger files will be rejected. Split them up if needed.
 - **CICIDS-2017 schema only** — the model was trained on a specific set of 78 features. CSVs with a different column schema will fail at the feature validation step.
@@ -206,7 +206,7 @@ The model treats each network flow as a 1D "signal" and learns spatial patterns 
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! If you want to improve the model, add new features, or fix bugs:
 
@@ -218,7 +218,7 @@ Contributions are welcome! If you want to improve the model, add new features, o
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
