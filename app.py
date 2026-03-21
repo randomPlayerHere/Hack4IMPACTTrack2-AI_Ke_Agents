@@ -331,4 +331,6 @@ async def predict(file: UploadFile = File(...)):
 
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8008, reload=True)
+    port = int(os.getenv("PORT", "8008"))
+    reload = os.getenv("UVICORN_RELOAD", "false").lower() == "true"
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=reload)

@@ -219,6 +219,49 @@ The model treats each network flow as a 1D "signal" and learns spatial patterns 
 
 ---
 
+##  Deploy on Koyeb
+
+This project is now container-ready for Koyeb using the included Dockerfile.
+
+### 1) Push code to GitHub
+
+Make sure your repo contains:
+
+- `Dockerfile`
+- `.dockerignore`
+- `app.py`
+- `frontend/`
+- `requirements.txt`
+- `models/` (must include `cicids_scaler.pkl` and either `nids_dcnn_model.tflite` or `nids_dcnn_model.h5`)
+
+> Important: if `models/*` is ignored in your Git repository, Koyeb builds will succeed but `/health` will return `503` and predictions will fail until model files are included in the deployed image.
+
+### 2) Create the Koyeb service
+
+1. Go to Koyeb Dashboard → **Create App** → **Web Service**
+2. Connect your GitHub repo
+3. Builder: **Dockerfile**
+4. Exposed port: `8000`
+5. Health check path: `/health`
+6. Deploy
+
+### 3) Runtime behavior on Koyeb
+
+- The app binds to `0.0.0.0` and reads `PORT` automatically.
+- Local dev still works with:
+
+```bash
+python app.py
+```
+
+If needed, you can override local reload behavior:
+
+```bash
+UVICORN_RELOAD=true python app.py
+```
+
+---
+
 ##  Contributing
 
 Contributions are welcome! If you want to improve the model, add new features, or fix bugs:

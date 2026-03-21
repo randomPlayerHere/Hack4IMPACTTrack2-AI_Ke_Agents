@@ -54,14 +54,7 @@ data/processed/*
 
 # Model artifacts (too large for git — download separately)
 # Place these in models/ locally; see README for instructions
-models/*.h5
-models/*.tflite
-models/*.pkl
-models/*.joblib
-models/*.onnx
-models/*.pt
-models/*.pth
-models/*.ckpt
+
 !models/.gitkeep
 
 # Other common ML artifacts
