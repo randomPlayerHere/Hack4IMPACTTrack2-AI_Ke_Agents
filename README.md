@@ -27,15 +27,15 @@ It was built using the [CICIDS-2017](https://www.unb.ca/cic/datasets/ids-2017.ht
 ##  Project Structure
 
 ```
-net-ninja/
+Hack4IMPACTTrack2-AI_Ke_Agents/
 ├── app.py                  # FastAPI backend — all API routes + inference logic
 ├── frontend/
 │   ├── upload.html         # Upload page (served at GET /)
 │   └── results.html        # Results dashboard (served at GET /results)
 ├── models/
+│   ├── cicids_scaler.pkl       # Required scaler + expected feature schema
 │   ├── nids_dcnn_model.tflite  # Quantized TFLite model (used by default)
-│   ├── nids_dcnn_model.h5      # Full Keras model (fallback)
-│   └── cicids_scaler.pkl       # StandardScaler fitted on CICIDS-2017 features
+│   └── nids_dcnn_model.h5      # Full Keras model (fallback)
 ├── data/
 │   ├── raw/                # Raw CICIDS-2017 CSV files (not tracked in git)
 │   └── processed/          # Preprocessed numpy arrays (not tracked in git)
@@ -138,10 +138,11 @@ All endpoints are served by the FastAPI backend. You can access the auto-generat
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| `HEAD` | `/` | Lightweight page check |
 | `GET` | `/` | Serves the upload page |
 | `GET` | `/results` | Serves the results dashboard |
 | `GET` | `/health` | Returns model status and feature count |
-| `GET` | `/sample-dataset` | Returns `test.csv` as a downloadable file |
+| `GET` | `/sample-dataset` | Returns `test.csv` if present, otherwise generates a synthetic sample CSV |
 | `POST` | `/predict` | Accepts a `.csv` file, returns JSON predictions |
 
 ### `/predict` — Example
@@ -168,6 +169,17 @@ curl -X POST http://localhost:8008/predict \
 
 > **Note:** The API accepts CSVs with up to **10,000 rows** per request. The input schema must match the CICIDS-2017 feature set (78 features after dropping metadata columns).
 
+### `/predict` response behavior (important limits)
+
+- `results`: preview rows are capped at **30** entries (UI table)
+- `csv_download`: downloadable rows are capped at **500** entries
+- Risk is derived from attack percentage:
+  - `> 75` → `CRITICAL`
+  - `> 50` → `HIGH`
+  - `> 25` → `MEDIUM`
+  - `> 5`  → `LOW`
+  - else   → `MINIMAL`
+
 ---
 
 ##  Model Details
@@ -178,8 +190,8 @@ curl -X POST http://localhost:8008/predict \
 | Dataset | CICIDS-2017 (Canadian Institute for Cybersecurity) |
 | Classes | BENIGN, ATTACK |
 | Input | 78 normalized network flow features |
-| Inference Format | TFLite (quantized) with Keras H5 fallback |
-| Preprocessing | StandardScaler (fitted on training data) |
+| Inference Format | TFLite (default) with Keras H5 fallback |
+| Preprocessing | Runtime cleaning (`Inf/-Inf -> NaN -> 0`) + fitted `cicids_scaler.pkl` transform |
 
 The model treats each network flow as a 1D "signal" and learns spatial patterns across feature dimensions using stacked Conv1D layers, followed by dense layers for classification.
 
@@ -202,6 +214,7 @@ The model treats each network flow as a 1D "signal" and learns spatial patterns 
 - **Max 10,000 rows per request** — larger files will be rejected. Split them up if needed.
 - **CICIDS-2017 schema only** — the model was trained on a specific set of 78 features. CSVs with a different column schema will fail at the feature validation step.
 - **TFLite inference is row-by-row** — for very large batches, the Keras H5 model will be faster if you have it available.
+- **Preview/download caps** — API response table preview is limited to 30 rows, and CSV export payload is limited to 500 rows per request.
 - **No authentication** — this is a demo/hackathon tool. Don't expose it publicly without adding auth.
 
 ---
