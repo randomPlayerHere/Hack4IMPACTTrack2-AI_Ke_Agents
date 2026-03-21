@@ -11,7 +11,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-# ── TensorFlow / TFLite Setup ──────────────────────────────────────────────
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 try:
     import tensorflow as tf
@@ -22,7 +21,6 @@ try:
 except Exception:
     pass
 
-# ── Paths & Constants ──────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TFLITE_MODEL_PATH = os.path.join(BASE_DIR, "models", "nids_dcnn_model.tflite")
 H5_MODEL_PATH = os.path.join(BASE_DIR, "models", "nids_dcnn_model.h5")
@@ -34,7 +32,6 @@ PREDICT_BATCH_SIZE = 64
 MAX_DOWNLOAD_ROWS = 500
 MAX_DISPLAY_ROWS = 30
 
-# ── FastAPI App ────────────────────────────────────────────────────────────
 app = FastAPI(title="Net Ninja - NIDS Backend")
 
 app.add_middleware(
@@ -44,7 +41,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── ML Asset Loading ──────────────────────────────────────────────────────
 model = None
 tflite_interpreter = None
 scaler = None
@@ -84,7 +80,6 @@ def load_assets():
 load_assets()
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────
 def preprocess_inference(df: pd.DataFrame) -> pd.DataFrame:
     to_drop = ["Flow ID", "Source IP", "Destination IP", "Timestamp"]
     df = df.drop(columns=to_drop, errors="ignore")
@@ -107,7 +102,6 @@ def compute_risk(attack_pct: float):
         return "MINIMAL", "Network appears secure with minimal threats."
 
 
-# ── Frontend Routes ────────────────────────────────────────────────────────
 @app.head("/")
 async def head_root():
     return HTMLResponse(content="")
@@ -115,7 +109,6 @@ async def head_root():
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_upload_page():
-    """Serve the upload/ingestion page."""
     html_path = os.path.join(BASE_DIR, "frontend", "upload.html")
     if not os.path.exists(html_path):
         raise HTTPException(status_code=404, detail="Upload page not found.")
@@ -125,7 +118,6 @@ async def serve_upload_page():
 
 @app.get("/results", response_class=HTMLResponse)
 async def serve_results_page():
-    """Serve the results dashboard page."""
     html_path = os.path.join(BASE_DIR, "frontend", "results.html")
     if not os.path.exists(html_path):
         raise HTTPException(status_code=404, detail="Results page not found.")
@@ -133,7 +125,6 @@ async def serve_results_page():
         return HTMLResponse(content=f.read())
 
 
-# ── API Routes ─────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
     if load_error:
@@ -151,7 +142,6 @@ async def health():
 
 @app.get("/sample-dataset")
 async def download_sample():
-    """Return a small sample CSV built from the scaler's expected features."""
     csv_path = os.path.join(BASE_DIR, "test.csv")
     if os.path.exists(csv_path):
         return FileResponse(
@@ -159,7 +149,6 @@ async def download_sample():
             media_type="text/csv",
             filename="sample_network_data.csv",
         )
-    # If no test.csv exists, generate a tiny synthetic sample
     if scaler is None:
         raise HTTPException(status_code=503, detail="Scaler not loaded, cannot generate sample.")
     feature_names = list(scaler.feature_names_in_)
@@ -167,7 +156,6 @@ async def download_sample():
     rng = np.random.RandomState(42)
     data = rng.randn(n_samples, len(feature_names)) * 0.5
     sample_df = pd.DataFrame(data, columns=feature_names)
-    # Add metadata columns that the frontend expects
     sample_df.insert(0, "Source IP", [f"192.168.1.{rng.randint(1, 255)}" for _ in range(n_samples)])
     sample_df.insert(1, "Destination IP", [f"10.0.0.{rng.randint(1, 255)}" for _ in range(n_samples)])
     sample_df.insert(2, "Timestamp", pd.date_range("2024-01-15 10:00:00", periods=n_samples, freq="s").astype(str).tolist())
@@ -215,7 +203,6 @@ async def predict(file: UploadFile = File(...)):
             raise ValueError(f"Missing columns: {', '.join(list(missing)[:10])}")
         processed = processed[expected_features]
 
-        # ── Run Inference ──────────────────────────────────────────────
         predicted_chunks = []
         confidence_chunks = []
 
@@ -263,7 +250,6 @@ async def predict(file: UploadFile = File(...)):
         predicted_classes = np.concatenate(predicted_chunks)
         confidence_scores = np.concatenate(confidence_chunks)
 
-        # ── Build Response ─────────────────────────────────────────────
         n_benign = int((predicted_classes == 0).sum())
         n_attack = int((predicted_classes == 1).sum())
         attack_pct = round((n_attack / total_rows) * 100, 2) if total_rows else 0
@@ -274,22 +260,13 @@ async def predict(file: UploadFile = File(...)):
         risk_level, risk_msg = compute_risk(attack_pct)
 
         conf_histogram = {
-            "90-100%": int(
-                ((confidence_scores >= 0.9) & (confidence_scores <= 1.0)).sum()
-            ),
-            "80-90%": int(
-                ((confidence_scores >= 0.8) & (confidence_scores < 0.9)).sum()
-            ),
-            "70-80%": int(
-                ((confidence_scores >= 0.7) & (confidence_scores < 0.8)).sum()
-            ),
-            "60-70%": int(
-                ((confidence_scores >= 0.6) & (confidence_scores < 0.7)).sum()
-            ),
-            "<60%": int((confidence_scores < 0.6).sum()),
+            "90-100%": int(((confidence_scores >= 0.9) & (confidence_scores <= 1.0)).sum()),
+            "80-90%":  int(((confidence_scores >= 0.8) & (confidence_scores <  0.9)).sum()),
+            "70-80%":  int(((confidence_scores >= 0.7) & (confidence_scores <  0.8)).sum()),
+            "60-70%":  int(((confidence_scores >= 0.6) & (confidence_scores <  0.7)).sum()),
+            "<60%":    int((confidence_scores < 0.6).sum()),
         }
 
-        # Pick display columns
         preferred_cols = [
             "Source IP", "Destination IP", "Timestamp", "Protocol",
             "Destination Port", "Flow Duration", "Total Fwd Packets",
@@ -353,6 +330,5 @@ async def predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
-# ── Entry Point ────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8008, reload=True)

@@ -134,7 +134,6 @@
 
 <body class="bg-background text-on-surface font-body selection:bg-primary/30 antialiased overflow-hidden">
 
-  <!-- Error Toast Container -->
   <div id="error-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-[100] hidden">
     <div
       class="error-toast bg-error-container text-on-error-container px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3">
@@ -143,7 +142,6 @@
     </div>
   </div>
 
-  <!-- Minimal Header -->
   <header
     class="fixed top-0 left-0 w-full h-16 flex items-center justify-between px-8 bg-[#111317] border-b border-[#464554]/15 z-50 shadow-[0_40px_40px_-15px_rgba(99,102,241,0.06)]">
     <span class="text-xl font-bold tracking-tight text-[#c0c1ff] font-headline">Net Ninja</span>
@@ -155,16 +153,13 @@
   </header>
 
   <main class="flex h-screen pt-16">
-    <!-- Center Upload Area -->
     <section class="flex-1 flex flex-col items-center justify-center p-8 bg-surface-container-lowest">
       <div class="max-w-xl w-full">
         <h1 class="font-headline text-4xl font-extrabold text-on-surface tracking-tight mb-8">
           Net Ninja — Network Intrusion Detection
         </h1>
-        <!-- Upload Card -->
         <div id="upload-card"
           class="bg-surface-container-low p-12 rounded-xl flex flex-col items-center text-center shadow-2xl relative overflow-hidden group cursor-pointer">
-          <!-- Subtle Interior Glow -->
           <div
             class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
           </div>
@@ -178,7 +173,6 @@
           <p id="upload-subtitle" class="text-on-surface-variant mb-10 max-w-sm">
             Drag &amp; drop or browse your local directory to upload network traffic logs.
           </p>
-          <!-- Hidden file input -->
           <input type="file" id="csv-file-input" accept=".csv" class="hidden" />
           <div id="upload-buttons" class="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
             <button id="btn-select-file"
@@ -190,7 +184,6 @@
               Try Sample Dataset
             </button>
           </div>
-          <!-- File name display (hidden initially) -->
           <div id="file-info" class="hidden mt-6 flex items-center gap-2 text-sm text-primary">
             <span class="material-symbols-outlined text-sm">description</span>
             <span id="file-name"></span>
@@ -200,7 +193,6 @@
             Secure End-to-End Encryption Enabled
           </div>
         </div>
-        <!-- Feature Hints -->
         <div class="mt-12 grid grid-cols-2 gap-6">
           <div class="flex items-start gap-4">
             <span class="material-symbols-outlined text-primary-container" data-icon="auto_awesome">auto_awesome</span>
@@ -221,7 +213,6 @@
         </div>
       </div>
     </section>
-    <!-- Right Analysis Panel -->
     <aside class="w-80 bg-surface-container-low border-l border-outline-variant/15 p-8 flex flex-col">
       <div class="flex items-center justify-between mb-8">
         <h3 class="font-headline font-bold text-lg text-on-surface tracking-tight">Active Process</h3>
@@ -229,7 +220,6 @@
           data-icon="hourglass_empty">hourglass_empty</span>
       </div>
       <div class="space-y-10">
-        <!-- Progress Group: Preprocessing -->
         <div class="space-y-3">
           <div class="flex justify-between items-end">
             <div class="flex flex-col">
@@ -244,7 +234,6 @@
           <p class="text-[10px] text-outline leading-tight">Normalizing data fields and removing anomalies from the raw
             dataset.</p>
         </div>
-        <!-- Progress Group: Running ML Model -->
         <div class="space-y-3">
           <div id="step2-header" class="flex justify-between items-end opacity-40">
             <div class="flex flex-col">
@@ -275,7 +264,6 @@
       </div>
     </aside>
   </main>
-  <!-- Background Decorative Elements -->
   <div class="fixed top-1/4 -right-24 w-96 h-96 bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
   <div
     class="fixed bottom-0 -left-24 w-[500px] h-[500px] bg-secondary-container/5 blur-[150px] rounded-full pointer-events-none -z-10">
